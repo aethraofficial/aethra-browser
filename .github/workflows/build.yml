@@ -1,0 +1,40 @@
+name: Build Aethra Browser
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: |
+          npm install -g pnpm
+          pnpm install
+
+      - name: Build app
+        run: pnpm --filter @aethra/desktop build
+
+      - name: Build installers
+        run: pnpm --filter @aethra/desktop dist
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: aethra-${{ matrix.os }}
+          path: apps/desktop/dist

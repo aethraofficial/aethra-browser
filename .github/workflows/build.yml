@@ -26,13 +26,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Build application
-        run: npm run build
+      # IMPORTANT: build installer target, not just compile
+      - name: Build Linux Snap
+        run: npm run dist:linux
       
-      - name: Install snapcraft
+      # More reliable snapcraft installation
+      - name: Install Snapcraft
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y snapcraft
+          sudo snap install snapcraft --classic
       
       - name: Build Snap package
         run: snapcraft --destructive-mode

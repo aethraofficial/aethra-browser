@@ -1,4 +1,4 @@
-name: Build macOS Installer
+name: Complete Release Build (All Platforms)
 
 permissions:
   contents: write
@@ -7,42 +7,142 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
 
 jobs:
-  build-mac:
-    runs-on: macos-latest
-    
+
+  build-linux:
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build application
-        run: npm run build
-      
-      - name: List dist files
-        run: ls -lh dist/
-      
-      - name: Upload DMG to Release
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/*.dmg
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Upload artifacts
+
+      - run: npm ci
+
+      - name: Build Linux installers
+        run: npm run dist:linux
+
+      - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: macos-dmg
+          name: linux-artifacts
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.tar.gz
+          if-no-files-found: error
+
+
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build Windows installer
+        run: npm run dist:win
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: dist/*.exe
+          if-no-files-found: error
+
+
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build macOS installer
+        run: npm run dist:mac
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
           path: dist/*.dmg
-          retention-days: 30
+          if-no-files-found: error
+
+
+
+  build-snap:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Install Snapcraft
+        run: sudo snap install snapcraft --classic
+
+      - name: Build Linux app
+        run: npm run dist:linux
+
+      - name: Build Snap package
+        run: snapcraft --destructive-mode
+
+      - name: Upload Snap artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: snap-artifacts
+          path: "*.snap"
+          if-no-files-found: error
+
+
+
+  publish-release:
+    name: Publish Release
+    needs:
+      - build-linux
+      - build-windows
+      - build-macos
+      - build-snap
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: List downloaded files
+        run: ls -R
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            linux-artifacts/**
+            windows-artifacts/**
+            macos-artifacts/**
+            snap-artifacts/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

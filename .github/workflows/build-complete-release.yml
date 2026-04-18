@@ -1,22 +1,36 @@
 name: Complete Release Build (All Platforms)
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
       - 'v*'
 
 jobs:
+
   build-linux:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      - run: npm ci
-      - run: npm run build
-      - uses: actions/upload-artifact@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: linux-artifacts
           path: |
@@ -24,64 +38,111 @@ jobs:
             dist/*.deb
             dist/*.tar.gz
 
+
+
   build-windows:
     runs-on: windows-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      - run: npm ci
-      - run: npm run build
-      - uses: actions/upload-artifact@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: windows-artifacts
           path: dist/*.exe
 
+
+
   build-macos:
     runs-on: macos-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      - run: npm ci
-      - run: npm run build
-      - uses: actions/upload-artifact@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: macos-artifacts
           path: dist/*.dmg
 
+
+
   build-snap:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-      - run: sudo apt-get update -qq && sudo apt-get install -y snapcraft
-      - run: npm ci
-      - run: npm run build
-      - run: snapcraft --destructive-mode
-      - uses: actions/upload-artifact@v3
+
+      - name: Install Snapcraft
+        run: sudo apt-get update -qq && sudo apt-get install -y snapcraft
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Build Snap package
+        run: snapcraft --destructive-mode
+
+      - name: Upload Snap artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: snap-artifacts
           path: '*.snap'
 
+
+
   publish-release:
-    needs: [build-linux, build-windows, build-macos, build-snap]
+    name: Publish GitHub Release
+    needs:
+      - build-linux
+      - build-windows
+      - build-macos
+      - build-snap
+
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
-      
+        uses: actions/download-artifact@v4
+
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             linux-artifacts/*
@@ -90,4 +151,3 @@ jobs:
             snap-artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

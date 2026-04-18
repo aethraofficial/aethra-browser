@@ -1,0 +1,57 @@
+name: Build Snap Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-snap:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Install snapcraft
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y snapcraft
+      
+      - name: Build Snap
+        run: |
+          cd /home/runner/work/aethra-browser/aethra-browser
+          snapcraft --destructive-mode
+      
+      - name: List snap files
+        run: ls -lh *.snap
+      
+      - name: Upload Snap to Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            *.snap
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: snap-package
+          path: '*.snap'
+          retention-days: 30
+

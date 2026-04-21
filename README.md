@@ -73,10 +73,24 @@ sudo snap install aethra-browser_1.0.0_amd64.snap --dangerous
 - **Documentation:** 28 files
 - **Quality:** Production-ready
 
-### Support
+## 💙 Support Aethra Browser
 
-For issues and questions, please check the documentation in the `docs/` folder.
+Aethra is an open-source cybersecurity browser built for researchers.
 
+If you find it valuable, you can support ongoing development:
+
+### 💳 UPI Donation
+- UPI ID: **mr.piyush887.wallet@phonepe**
+
+👉 Supported apps: Google Pay / PhonePe / Paytm
+
+
+### 🚀 Why Support?
+- Faster feature releases  
+- Advanced built-in security tooling  
+- Continuous improvements & updates  
+
+> Your support helps keep Aethra independent and evolving.
 ---
 
 **Built with ❤️ by Aethra Team**
